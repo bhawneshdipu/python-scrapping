@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 26 21:36:17 2018
+
+@author: dipu
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Feb 25 21:37:06 2018
+
+@author: dipu
+"""
+import os
+import urllib
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from time import sleep
+from dateutil.parser import parse
+import traceback
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+import csv
+import string
+import re
+
+
+location_lat=dict()
+location_lng=dict()
+
+def month_to_num(name):
+    name=name[0:3]
+    if name == "jan": return '01'
+    elif name == "feb": return '02'
+    elif name == "mar": return '03'
+    elif name == "apr": return '04'
+    elif name == "may": return '05'
+    elif name == "jun": return '06'
+    elif name == "jul": return '07'
+    elif name == "aug": return '08'
+    elif name == "sep": return '09'
+    elif name == "oct": return '10'
+    elif name == "nov": return '11'
+    elif name == "dec": return '12'
+    else: raise "valueerror"
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print(dir_path)
+prefs = {"profile.managed_default_content_settings.images":2}
+chromeOptions = webdriver.ChromeOptions()
+chromeOptions.add_experimental_option("prefs",prefs)
+driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
+#driver = webdriver.Chrome(dir_path+'/chromedriver')
+#driver.add_cookie({'ebillett_locale'='no', 'expires'='', 'path'='/'})
+cities=['Åkrehamn','Ålesund','Alta','Åndalsnes','Arendal','Askim','Bergen','Bodø','Brekstad','Brevik','Brønnøysund','Brumunddal','Bryne','Drammen','Drøbak','Egersund','Elverum','Fagernes','Farsund','Fauske','Finnsnes','Flekkefjord']
+#cities=['Flekkefjord', 'Florø','Førde','Fosnavåg','Fredrikstad','Gjøvik','Grimstad']#,
+#cities=['Halden','Hamar','Hammerfest','Harstad','Haugesund','Hokksund','Holmestrand','Hønefoss','Honningsvåg','Horten','Jessheim','Jørpeland','Kirkenes','Kolvereid','Kongsberg','Kongsvinger','Kopervik','Kragerø','Kristiansand','Kristiansund','Langesund','Larvik','Leirvik','Leknes','Levanger','Lillehammer','Lillesand','Lillestrøm','Lyngdal','Måløy','Mandal','Mo i Rana','Molde','Mosjøen','Moss','Mysen','Namsos','Narvik','Notodden','Odda','Orkanger','Oslo','Otta','Porsgrunn','Risør','Rjukan','Sandefjord','Sandnes','Sandnessjøen','Sandvika','Sarpsborg','Sauda','Ski','Skien','Skudeneshavn','Sortland','Stathelle','Stavanger','Stavern','Steinkjer','Stjørdalshalsen','Tananger','Tønsberg','Tromsø','Trondheim','Tvedestrand','Ulsteinvik','Vadsø','Vardø','Verdalsøra','Vinstra']
+#cities=['Bodø','Brekstad','Brevik','Brønnøysund','Brumunddal','Bryne','Drammen','Drøbak','Egersund','Elverum','Fagernes','Farsund','Fauske','Finnsnes','Flekkefjord','Florø','Førde','Fosnavåg','Fredrikstad','Gjøvik','Grimstad','Halden','Hamar','Hammerfest','Harstad','Haugesund','Hokksund','Holmestrand','Hønefoss','Honningsvåg','Horten','Jessheim','Jørpeland','Kirkenes','Kolvereid','Kongsberg','Kongsvinger','Kopervik','Kragerø','Kristiansand','Kristiansund','Langesund','Larvik','Leirvik','Leknes','Levanger','Lillehammer','Lillesand','Lillestrøm','Lyngdal','Måløy','Mandal','Mo i Rana','Molde','Mosjøen','Moss','Mysen','Namsos','Narvik','Notodden','Odda','Orkanger','Oslo','Otta','Porsgrunn','Risør','Rjukan','Sandefjord','Sandnes','Sandnessjøen','Sandvika','Sarpsborg','Sauda','Ski','Skien','Skudeneshavn','Sortland','Stathelle','Stavanger','Stavern','Steinkjer','Stjørdalshalsen','Tananger','Tønsberg','Tromsø','Trondheim','Tvedestrand','Ulsteinvik','Vadsø','Vardø','Verdalsøra','Vinstra']
+
+cities=['Åndalsnes']
+pageid=1
+done=0
+cityid=0
+pageid=1
+url='https://ebillett.no/events?search='
+
+for city in cities:
+    
+    try:
+        folder=dir_path+'/data/'+str(city)
+        csvfile = folder+'/ebillrtt.no_'+str(city)+'.csv'
+        try:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+        except:
+            print("Folder Exist")
+            print(traceback.format_exc())
+            
+        header = ['ai_id', 'category', 'event_name', 'event_desc', 'start_date', 'start_time', 'end_date', 'end_time', 'host_name', 'location_name', 'location_address', 'location_desc', 'host_contact', 'lat', 'lng','image_name', 'city', 'ticket_link', 'facebookhost_id', 'website', 'facebook_id', 'linkedin_id', 'twitter_id', 'instagram_id', 'pinterest_id', 'google_id', 'skype_id', 'youtube_id', 'discord_id', 'snapchat_id', 'ello_id', 'periscope_id', 'vimeo_id', 'meerkat_id', 'vine_id', 'flickr_id', 'tumblr_id', 'medium_id', 'tripadvisor_id', 'dribble_id', 'whatsapp_id']
+        
+        with open(csvfile, "w",encoding="utf-8") as output:
+            writer = csv.writer(output, lineterminator='\n')
+            if(done==0):
+                writer.writerow(header)
+            
+            print('https://ebillett.no/events?search='+city+'&page='+str(pageid))
+            nexturl='https://ebillett.no/events?search='+city+'&page='+str(pageid);
+            while(1):
+                pageid=1
+                driver.get(nexturl)
+                sleep(2)
+                
+                main_window = driver.current_window_handle
+                #dx-navbar-collapse > ul > li:nth-child(1) > a
+                #sleep(3)
+                print("language changed to norway")
+                if(cityid==0):
+                    driver.find_element_by_css_selector('#dx-navbar-collapse > ul > li:nth-child(1) > a').click()
+                    sleep(2)
+                #eventDivs = driver.find_elements_by_css_selector('#events-list > ul.event-box-wide.container')
+                eventTypeContainer = driver.find_elements_by_css_selector('#pjax-event-list-result-container > .container')
+                
+                
+                print('Container: '+str(len(eventTypeContainer)))
+                i=0
+                for eventType in eventTypeContainer:
+                    main_window = driver.current_window_handle
+                    try:
+                        print("city id:"+str(cityid))
+                    
+                        tagListUl=eventType.find_elements_by_css_selector('div#events-list > ul.event-box-wide.container ')
+                        print("Tag List Ul:"+str(len(tagListUl)))
+                        for tagList in tagListUl:
+                            tagList=tagList.find_elements_by_css_selector('.row')
+                            time=''
+                            print("Tag List:"+str(len(tagList)))
+                            for tagEle in tagList:
+                                #time
+                                    
+                                print(tagEle.tag_name);
+                                '''try:
+                                    if(tagEle.tag_name=='div'):
+                                        time=tagEle.text
+                                        if(len(time)==0):
+                                            time=tagEle.get_attribute("innerText")
+                                except:
+                                    print("Time Div not Found")
+                                    print(traceback.format_exc())
+                                    pass;'''
+                                
+                    
+                                if(tagEle.tag_name=='li'):
+                                    #event_link
+                                    event_link=tagEle.find_element_by_css_selector('div.event-title.col-sm-8.col-xs-24.vcenter > a').get_attribute('href')
+                                    event_link_ele=tagEle.find_element_by_css_selector('div.event-title.col-sm-8.col-xs-24.vcenter > a')
+                                    
+                                    #event_name
+                                    event_name=tagEle.find_element_by_css_selector('div.event-title.col-sm-8.col-xs-24.vcenter > a > h4').text
+                                    #event_location
+                                    #event_location=tagEle.find_element_by_css_selector('div.location.col-sm-6.col-xs-24.vcenter > span.event-promoter > a').text
+                                    #event_location_link
+                                    event_location_link=tagEle.find_element_by_css_selector('div.location.col-sm-6.col-xs-24.vcenter > span.event-promoter > a').get_attribute('href')
+                                    event_location_link_ele=tagEle.find_element_by_css_selector('div.location.col-sm-6.col-xs-24.vcenter > span.event-promoter > a')
+           
+                                    #event_address
+                                    #event_location_address=tagEle.find_element_by_css_selector('div.location.col-sm-6.col-xs-24.vcenter > span.event-location').text                                             
+                                    #print("Time->:"+time)
+                                    print("Event Link->:"+event_link)
+                                    #print("Event Name->:"+event_name)
+                                    #print("Event Location->:"+event_location)
+                                    print("Event Location Link->:"+event_location_link)
+                                    
+                                    #print("Event Location Address->:"+event_location_address)
+                                    
+                                    
+                                    #open event website:
+                                    print("opening event window:::"+event_link)
+                                    
+                                    url=event_link_ele
+                                    url.send_keys(Keys.CONTROL+Keys.RETURN)
+                                    driver.switch_to_window(driver.window_handles[1])
+                                    #sleep(2) #seconds
+                                    
+                                    driver.get(event_link)
+                                    #time=driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-18.col-md-16.col-sm-24.col-xs-24 > div:nth-child(2) > div > div:nth-child(1) > div.media-body').text
+                                    sleep(1)
+                                    print("language changing to  english")
+                                    driver.find_element_by_css_selector('#dx-navbar-collapse > ul > li:nth-child(1) > a').click()
+                                    sleep(1)
+                                    
+                                    
+                                    try:
+                                        time_info = driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-18.col-md-16.col-sm-24.col-xs-24 > div:nth-child(2) > div > div:nth-child(1) > div.media-body').text
+                                        split_raw = time_info.split('\n')
+                                        print(split_raw)
+                                        #for start date time
+                                        tmp_sdt = str.replace(split_raw[0].split(',',1)[1].strip(),',','').split(' ')
+                                        print(tmp_sdt)
+                                        print(tmp_sdt[0][0:3])
+                                        day=tmp_sdt[1].strip()
+                                        if(len(day) ==1):
+                                            day='0'+day
+                                        start_date = day+ '-' + month_to_num(tmp_sdt[0][0:3].lower().strip()) + '-' + tmp_sdt[2].strip()
+                                        start_time = tmp_sdt[3].strip()
+                                        
+                                        #for end date time
+                                        end_date = start_date
+                                        end_time = re.search('\d\d:\d\d', split_raw[1]).group()
+                                    except Exception:
+                                        print('Date time error')
+                                        print(traceback.format_exc())
+                    
+                    
+                                    print("language change to norish")
+                                    driver.find_element_by_css_selector('#dx-navbar-collapse > ul > li:nth-child(1) > a').click()
+                                    sleep(2)
+                                    try:
+                                        event_name=driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-18.col-md-16.col-sm-24.col-xs-24 > div.row.p-30 > div > h1').text
+                                    except:
+                                        print("Error in Event Name:"+event_name)
+                                    try:
+                                        ticket_link=driver.find_element_by_css_seevlector('#section-content > div.container.events-details > div > div.col-lg-6.col-md-8.col-sm-24.col-xs-24.hidden-sm.hidden-xs > div.panel.panel-default.p-10 > div > div > div:nth-child(3) > a').get_attribute('href')
+                                    except:
+                                        print("Error in Ticket Link")
+                                    #event desc
+                                    event_desc=''
+                                    event_image=''
+                                    try:
+                                        event_desc=driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-18.col-md-16.col-sm-24.col-xs-24 > div.panel.panel-default.synopsis.p-10 > div').text
+                                        print(event_desc+"--------------------->")
+                                        
+                                    except:
+                                        print(traceback.format_exc())
+                                        pass;
+                                    try:
+                                        event_details=driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-18.col-md-16.col-sm-24.col-xs-24 > div:nth-child(5) > div').text
+                                        event_desc+=" "+event_details
+                                    except:
+                                        print(traceback.format_exc())
+                                        pass;
+                                        
+                                    try:    
+                                        event_image=driver.find_element_by_css_selector('#section-content > div.container.events-details > div > div.col-lg-6.col-md-8.col-sm-24.col-xs-24.hidden-sm.hidden-xs > div.row.p-20 > div > img').get_attribute('src')
+                                        print("Image:"+event_image)
+                                        if(len(event_image)>0):
+                                            # download the image
+                                            urllib.request.urlretrieve(event_image, folder+"/"+event_image[(event_image.rfind('/')+1):event_image.rfind('?')])
+                                            image=folder+"/"+event_image[(event_image.rfind('/')+1):event_image.rfind('?')]
+                                            image=event_image[(event_image.rfind('/')+1):event_image.rfind('?')]
+                                            #urllib.urlretrieve(event_image, folder+'/images_'+event_image)
+                                    except:
+                                        print(traceback.format_exc())
+                                        pass;
+                                    
+                                    
+                                    #open location website:
+                                        
+                                    print("opening location window:::"+event_location_link)
+                        
+                                    driver.get(event_location_link)
+                                    sleep(1)
+                                    location_name=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > h1').text
+                                    location_address=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > address').text
+                                    promoter_website=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > ul > li:nth-child(2) > a').get_attribute('href')
+                                    
+                                    print(location_name,location_address,promoter_website)
+        
+                                    #open promoter website:
+                                        
+                                    #print("opening location window:::"+promoter_website)
+                        
+                                    #driver.get(promoter_website)
+                                    #sleep(1)
+                                    #host_name=driver.find_element_by_css_selector('head > title').get_attribute('innerText')
+                                    host_name=location_name
+                                    print("Host Name:"+host_name)
+        
+                                    
+                                    print("back to window:::")
+                                    
+                                    #latitute and longitude
+                                    
+                                    
+                                    map_key=location_name
+                                    if(map_key in location_lat and map_key in location_lng):
+                                        lat=location_lat[map_key]
+                                        lng=location_lng[map_key]
+                                        
+                                    else:
+                                        print("opening latlong window:::")
+                                        driver.switch_to_window(driver.window_handles[1])
+                                        #sleep(2) #seconds
+                            
+                                        driver.get('https://www.latlong.net/')
+                                        sleep(1)
+                                        inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
+                                        inputEle.send_keys(location_name+" , "+location_address)
+                                        driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
+                                        
+                                        #latitude
+                                        lat=''
+                                    
+                                        #longitude
+                                        lng=''
+                                        
+                                        try:
+                                            WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                                           'Timed out waiting for PA creation ' +
+                                                                           'confirmation popup to appear.')
+                                        
+                                            alert = driver.switch_to.alert
+                                            #print(alert.accept())
+                                            print("alert accepted")
+                                            driver.close()
+                                        except TimeoutException:
+                                            print("no alert")
+                                            print(traceback.format_exc())
+                                            lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
+                                            lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
+                                            print(lat)
+                                            print(lng)
+                                            location_lat[map_key]=lat
+                                            location_lng[map_key]=lng
+                                        
+                                                #sleep(1) 
+                                            #driver.switch_to_window(main_window)
+                                            print("back to  main window")
+                                            pass
+                                    
+                                    driver.close();
+                                    driver.switch_to_window(driver.window_handles[0])
+                                            
+                                    #final Data
+                                    ai_id=''
+                                    category=''
+                                    event_name=event_name
+                                    event_desc=event_desc
+                                    start_date=start_date
+                                    
+                                    start_time=start_time
+                                    end_time=end_time
+                                    host_name=host_name
+                                    location_name=location_name
+                                    end_date=end_date
+                                    location_address=location_address
+                                    location_desc=''
+                                    host_contact=''
+                                    lat=lat
+                                    lng=lng
+                                    image_name=image
+                                    city=city
+                                    ticket_link=ticket_link
+                                    facebookhost_id=''
+                                    website=promoter_website
+                                    facebook_id=''
+                                    linkedin_id=''
+                                    twitter_id=''
+                                    instagram_id=''
+                                    pinterest_id=''
+                                    google_id=''
+                                    skype_id=''
+                                    youtube_id=''
+                                    discord_id=''
+                                    snapchat_id=''
+                                    ello_id=''
+                                    periscope_id=''
+                                    vimeo_id=''
+                                    meerkat_id=''
+                                    vine_id=''
+                                    flickr_id=''
+                                    tumblr_id=''
+                                    medium_id=''
+                                    tripadvisor_id=''
+                                    dribble_id=''
+                                    whatsapp_id=''
+                                    
+                                    header = ['ai_id', 'category', 'event_name', 'event_desc', 'start_date', 'start_time', 'end_date', 'end_time', 'host_name', 'location_name', 'location_address', 'location_desc', 'host_contact', 'lat', 'lng','image_name', 'city', 'ticket_link', 'facebookhost_id', 'website', 'facebook_id', 'linkedin_id', 'twitter_id', 'instagram_id', 'pinterest_id', 'google_id', 'skype_id', 'youtube_id', 'discord_id', 'snapchat_id', 'ello_id', 'periscope_id', 'vimeo_id', 'meerkat_id', 'vine_id', 'flickr_id', 'tumblr_id', 'medium_id', 'tripadvisor_id', 'dribble_id', 'whatsapp_id']
+                                    final_data=[ai_id,category,event_name,event_desc,start_date,start_time,end_date,end_time,host_name,location_name,location_address,location_desc,host_contact,lat,lng,image,city,ticket_link,facebookhost_id,website,facebook_id,linkedin_id,twitter_id,instagram_id,pinterest_id,google_id,skype_id,youtube_id,discord_id,snapchat_id,ello_id,periscope_id,vimeo_id,meerkat_id,vine_id,flickr_id,tumblr_id,medium_id,tripadvisor_id,dribble_id,whatsapp_id]                         
+                                    
+                                    writer.writerow(final_data)
+                                    
+                                    i=i+1
+                                    print(i)
+                                    print('=============================================:'+str(i))
+                                    
+                                    #break
+                                        
+                    except Exception:
+                        print('No Event Data')
+                        #continue;
+                        driver.switch_to_window(driver.window_handles[0])
+                        print(traceback.format_exc())
+                        continue;
+                        #events-list > ul.event-box-wide.container > li > div.promoter-title.col-sm-8.col-xs-24.vcenter > a
+                        '''try:
+                            location_link=eventType.find_element_by_css_selector('#events-list > ul.event-box-wide.container > li > div.promoter-title.col-sm-8.col-xs-24.vcenter > a').get_attribute('href')
+                            print("Promoter Location Link:"+location_link)
+                            #open location website:
+                            website_window = driver.current_window_handle
+                               
+                            driver.get(event_location_link)
+                            location_name=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > h1').text
+                            location_address=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > address').text
+                            promoter_website=driver.find_element_by_css_selector('#section-content > div.page-header.partner-page-header > div > ul > li:nth-child(2) > a').get_attribute('href')
+                            driver.switch_to_window(website_window)
+    
+                            website_window = driver.current_window_handle
+                               
+                            #latitute and longitude
+                            driver.get('https://www.latlong.net/')
+                            inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
+                            inputEle.send_keys(event_location)
+                            driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
+                            
+                            #latitude
+                            lat=''
+                        
+                            #longitude
+                            lng=''
+                            
+                            try:
+                                WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                               'Timed out waiting for PA creation ' +
+                                                               'confirmation popup to appear.')
+                            
+                                alert = driver.switch_to.alert
+                                #print(alert.accept())
+                                print("alert accepted")
+                            except TimeoutException:
+                                print("no alert")
+                                lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
+                                lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
+                                print(lat)
+                                print(lng)
+                                pass
+                            
+                                    #sleep(1) 
+                                #driver.switch_to_window(main_window)
+                                website_window = driver.current_window_handle
+                               
+                                #break
+                        except:
+                            print('No Event and Promoter Data')
+                        #print(traceback.format_exc())
+                        '''
+                try:
+                    #nexturl=driver.find_element_by_css_selector('#events-list > div > ul > li')[-1].get_element_by_css_selector('a').get_attribute('href')
+                    nexturl=driver.find_elements_by_css_selector('#events-list > div > ul > li')[-1].find_element_by_css_selector('a').get_attribute('href')
+                    print("Next Url:"+nexturl)
+                    pageid+=1
+                    print("Next Page:"+str(nexturl))
+                except:
+                    print("next Page not exist");
+                    break;
+    except:
+        print("Exception Occurs")
+        print(traceback.format_exc())
+cityid+=1                
+driver.close()
