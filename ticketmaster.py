@@ -32,6 +32,37 @@ import json
 from dateutil import parser
 import datetime
 
+
+def get_month(month):
+    month=str(month)
+    month=month[:3]
+    month=str.lower(month)
+    print("Month:"+month)
+    if month == "jan": return '01'
+    elif month== "feb": return '02'
+    elif month== "mar": return '03'
+    elif month== "apr": return '04'
+    elif month== "mai": return '05'
+    elif month== "jun": return '06'
+    elif month== "jul": return '07'
+    elif month== "aug": return '08'
+    elif month== "sep": return '09'
+    elif month== "okt": return '10'
+    elif month== "nov": return '11'
+    elif month== "des": return '12'
+    else: return ''
+
+def convert_to_date(day,month,year,time):
+    month=get_month(month)
+    
+    date=year+'-'+month+'-'+day+'T'+time
+    print("DAte:"+date)
+    try:
+        dt=parser.parse(year+'-'+month+'-'+day+'T'+time)
+        return dt
+    except:
+        return None
+    
 map_lat=dict()
 map_lng=dict()
 fields= OrderedDict([('ai_id', None),
@@ -178,9 +209,25 @@ for pageno in range(startpage,maxpage+1):
             print("Start Time:"+start_time)
             
         except:
-            print("no date")
-        
             
+            print("no date")
+            day=event.find_element_by_css_selector('li.table__cell--date > div > div > span.calendaritem__day').text
+            month=event.find_element_by_css_selector('li.table__cell--date > div > div > span.calendaritem__date--month > span.calendaritem__date__item.month').text
+            year=event.find_element_by_css_selector('li.table__cell--date > div > div > span.calendaritem__date--month > span.calendaritem__date__item.year').text
+            time=event.find_element_by_css_selector('li.table__cell--date > div > div > span.calendaritem__date--day > span.calendaritem__date__item.time').text
+
+            dt=convert_to_date(day,month,year,time)
+            if(dt==None):
+                print("Invaild Date Time")
+            else:
+                start_date=dt.strftime("%d-%m-%y")
+                start_time=dt.strftime("%H:%M")
+                fields['start_date']=start_date
+                fields['start_time']=start_time
+                fields['end_date']=start_date
+                print("Start DAte:"+start_date)
+                print("Start Time:"+start_time)
+                
         #city
         #addr=location_name.split(',')
         #city=addr[1].strip()
