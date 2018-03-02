@@ -323,14 +323,15 @@ for pageno in range(1,maxpage+1):
                 fields['lat']=lat
                 fields['lng']=lng
                 pass    
-            driver.close()
+            
         except Exception:
             print(traceback.format_exc())
             print ('--no location_address')
         
-        
-        driver.switch_to_window(main_window)
-        driver.switch_to_window(driver.window_handles[0])
+        if(len(driver.window_handles)>1):
+            driver.switch_to_window(driver.window_handles[1])
+            driver.close()
+            driver.switch_to_window(driver.window_handles[0])
             
         with open(csvfile, "a", encoding='utf-8') as output:
             writer = csv.writer(output, lineterminator='\n')
