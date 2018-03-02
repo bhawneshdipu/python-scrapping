@@ -95,7 +95,7 @@ driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
 #driver.implicitly_wait(3)
 pageid=1
 pageno=1
-
+startpage=1
 maxpage=5
 folder='/ticketmaster'
 try:
@@ -104,7 +104,7 @@ try:
 except:
      print("Folder Exist")
 
-for pageno in range(1,maxpage+1):
+for pageno in range(startpage,maxpage+1):
     weburl="https://www.ticketmaster.no/musikk/alle-musikk/10001/events?countries=578&page="+str(pageno)
     driver.get("https://www.ticketmaster.no/musikk/alle-musikk/10001/events?countries=578&page="+str(pageno))
     print(weburl)
