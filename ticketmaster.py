@@ -32,21 +32,8 @@ import json
 from dateutil import parser
 import datetime
 
-def month_to_num(name):
-    if name == "jan": return '01'
-    elif name == "feb": return '02'
-    elif name == "mar": return '03'
-    elif name == "apr": return '04'
-    elif name == "may": return '05'
-    elif name == "jun": return '06'
-    elif name == "jul": return '07'
-    elif name == "aug": return '08'
-    elif name == "sep": return '09'
-    elif name == "oct": return '10'
-    elif name == "nov": return '11'
-    elif name == "dec": return '12'
-    else: raise 'valueerror'
-
+map_lat=dict()
+map_lng=dict()
 fields= OrderedDict([('ai_id', None),
 ('category', None),
 ('event_name', None),
@@ -218,7 +205,13 @@ for pageno in range(1,maxpage+1):
             except:
                 print("Event Link not found")
         
-        
+        #host_name#national-events > div > ul:nth-child(2) > li.table__cell--location > div > h4 > a
+        host_name=''
+        try:
+            host_name= event.find_element_by_css_selector('li.table__cell--location > div > h4 > a').text
+            fields['host_name']=host_name
+        except:
+            print("host name not found")
         #location_link_ele
         location_link_ele=None
         location_link=''
@@ -281,6 +274,7 @@ for pageno in range(1,maxpage+1):
         
         #open location link
         location_address = ''
+        
         try :
             if(len(driver.window_handles)>1):
                 driver.get(location_link)
@@ -293,36 +287,63 @@ for pageno in range(1,maxpage+1):
             sleep(1)
             addr=driver.find_element_by_css_selector('#infomodule > div > div.infomodule__wrapper > div.infomodule__general > p.infomodule__address').text
             print("rest of address : "+addr)
+            addr=str.replace(addr,'\n',' ,')
             location_address = location_name+', '+addr
             fields['location_address'] = location_address
-            print(fields['location_address'])
-            driver.get('https://www.latlong.net/')
-            inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
-            inputEle.send_keys(addr)
-            driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
-            #latitude
-            lat=''
-                
-            #longitude
-            lng=''
+            #host_contact
             
+            host_contact=''
             try:
-                WebDriverWait(driver, 3).until(EC.alert_is_present(),
-                              'Timed out waiting for PA creation ' +
-                              'confirmation popup to appear.')
+                host_contact=driver.find_element_by_css_selector('#infomodule > div > div.infomodule__wrapper > div.infomodule__general > p.infomodule__url > a').get_attribute('href')
+                fields['host_contact']=host_contact
+            except:
+                print("host contact not found")
+
+            #location_desc
+            location_desc=''
+            try:
+                location_desc=driver.find_element_by_css_selector('#venue-description-content').text
+                fields['location_desc']=location_desc
+            except:
+                print("location_desc not found")
+                
+            print(fields['location_address'])
+            if(addr not in map_lat or addr not in map_lng):
+                driver.get('https://www.latlong.net/')
+                inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
+                inputEle.send_keys(addr)
+                driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
+                #latitude
+                lat=''
+                    
+                #longitude
+                lng=''
+                
+                try:
+                    WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                  'Timed out waiting for PA creation ' +
+                                  'confirmation popup to appear.')
+                
+                    alert = driver.switch_to.alert
+                    alert.accept()
+                    print("alert accepted")
+                except TimeoutException:
+                    print("no alert")
+                    lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
+                    lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
+                    print(lat)
+                    print(lng)
+                    fields['lat']=lat
+                    fields['lng']=lng
+                    map_lat[addr]=lat
+                    map_lng[addr]=lng
+                    pass        
+            else:
+                fields['lat']=map_lat[addr]
+                fields['lng']=map_lng[addr]
+                pass
             
-                alert = driver.switch_to.alert
-                alert.accept()
-                print("alert accepted")
-            except TimeoutException:
-                print("no alert")
-                lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
-                lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
-                print(lat)
-                print(lng)
-                fields['lat']=lat
-                fields['lng']=lng
-                pass    
+            
             
         except Exception:
             print(traceback.format_exc())
