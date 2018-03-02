@@ -6,12 +6,6 @@ Created on Thu Mar  1 01:10:34 2018
 @author: dipu
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 27 03:01:26 2018
-
-@author: aptus
-"""
 import os
 import urllib
 from selenium import webdriver
@@ -30,7 +24,7 @@ from collections import OrderedDict
 import urllib.request
 import datetime
 from dateutil import parser
-fields= OrderedDict([('ai_id', ''),
+fields = OrderedDict([('ai_id', ''),
 ('category', ''),
 ('event_name', ''),
 ('event_desc', ''),
@@ -71,6 +65,9 @@ fields= OrderedDict([('ai_id', ''),
 ('tripadvisor_id', ''),
 ('dribble_id', ''),
 ('whatsapp_id', ''),
+('search_value',''),
+('parent_event',''),
+('marker',''),
 ('site_scraped','')])
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -104,7 +101,7 @@ with open(csvfile, "w", encoding='utf-8') as output:
     if(page==0):
         writer.writerow(header)
     
-for page in range(0,120,10):
+for page in range(0,110,10):
     
     img_folder = folder + '/images'
     
@@ -116,37 +113,51 @@ for page in range(0,120,10):
         print("Folder Exist")
     page_id=1
     next_page = 'https://www.ringbillett.no/arrangementer.aspx?q=&s='+str(page)
+    print(next_page)
+    print("================================")
     driver.get(next_page)
     sleep(2)
     #click for norway language
     main_window = driver.current_window_handle
     table_rows=driver.find_elements_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > center > table > tbody tr')
+    event_count=1
+    count=0
     for tr in table_rows:
+        
+        print("Count:"+str(count))
+        count+=1
         if(len(tr.find_elements_by_css_selector('td'))>1):
             event_link=tr.find_element_by_css_selector('td:nth-child(2) > a:nth-child(1)').get_attribute('href')
-            fields['event_link']=event_link
-            print(event_link)
+            fields['site_scraped']=event_link
+            print('Event Link:'+event_link)
+            event_link='http://www.ringbillett.no/'+event_link
+                
             try:
+                
                 ticket_link=tr.find_element_by_css_selector('td:nth-child(4) > a').get_attribute('href')
                 print("Ticket Link"+ticket_link)
-                event_link='http://www.ringbillett.no/'+event_link
                 ticket_id_url=ticket_link[ticket_link.rfind('?')+1:]
-                print(ticket_id_url)
+                #print(ticket_id_url)
                 event_id=ticket_id_url.split('&')[0].split('=')[1]
-                print(ticket_id_url.split('&'))
-                print(ticket_id_url.split('&')[0].split('='))
+                #print(ticket_id_url.split('&'))
+                #print(ticket_id_url.split('&')[0].split('='))
                 arrangement_id=ticket_id_url.split('&')[1].split('=')[1]
-                print(arrangement_id)
+                #print(arrangement_id)
                 fields['ticket_link']=ticket_link
             except:
                 print("Ticket Link not exist")
+                #print(traceback.format_exc())
+                
+                
             #get to event_link website
             try:
                 url=tr.find_element_by_css_selector('td:nth-child(2) > a:nth-child(1)')
                 url.send_keys(Keys.CONTROL+Keys.RETURN)
                 driver.switch_to_window(driver.window_handles[1])
+                sleep(1)
             except:
                 print("Event Link not Present")
+                print(traceback.format_exc())
             try:                
                 image_link=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > span:nth-child(1) > img').get_attribute('src')
             except:
@@ -154,17 +165,19 @@ for page in range(0,120,10):
             #download image
             try:
                 print("Image link:"+image_link)
+                img_src=''
                 if(str.find(image_link,"http")>=0 or str.find(image_link,"www")>=0):
                     img_src=image_link
                 else:
                     if(len(image_link)>0):
                         img_src = 'http://www.ringbillett.no/'+image_link
-                print("image src:"+img_src)
+                
+                #print("image src:"+img_src)
                 x = img_src.split('/')[-1]
-                print("x:"+x);
+                #print("Image Name:"+x);
                 fields['image_name']=x
                 save_path = folder+"/"+x
-                print("Save_path:"+save_path)
+                #print("Save_path:"+save_path)
                 if(len(img_src)>0):
                     urllib.request.urlretrieve(img_src, save_path)
             except Exception:
@@ -181,169 +194,348 @@ for page in range(0,120,10):
             try:
                 host_name=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > a').text
                 fields['host_name']=host_name
+                print("Host name:"+host_name)
             except:
                 print("Host not found")
             try:
                 event_desc=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > p').text
                 fields['event_desc']=event_desc
+                print("Event Desc:"+event_desc)
             except:
                 print("Event Desc not found")
                 
-            #open the next url in current window
+            
+            
+            
+            
+            
+            #open the next ticket in current window
+            
             try:
-                driver.get(ticket_link)
+                if(len(ticket_link)>0):
+                    driver.get(ticket_link)
+                else:
+                    raise ValueError('Ticket Link not found:'+ticket_link)
+            
+                #find last date
+                try:
+                    event_rows=driver.find_elements_by_css_selector('#Billett > table > tbody > tr')
+                    #print("Event Rows:"+str(len(event_rows)))
+                    if(len(event_rows)>2):
+                        for i in range(1,len(event_rows)):
+                            event_row=event_rows[i]
+                            #print("Row number:"+str(i))
+                            arr_id=event_row.find_element_by_css_selector('td:nth-child(1) > input[type="radio"]').get_attribute('value')
+                            #print("Arr ID:"+arr_id)
+                            if(arrangement_id==arr_id):
+                                 print("Arrangement ID===ARR ID")
+                                 start_time=event_row.find_element_by_css_selector('td:nth-child(2)').text
+                                 #print("Start Time:"+start_time)
+                                 fields['start_time'] = start_time
+                                 time_info=event_row.find_element_by_css_selector('td:nth-child(3)').text
+                                 #print("Time info:"+str(time_info))
+                                 #print("Time Split:"+str(time_info.split(',')))
+                                 time_date=time_info.split(',')[1]
+                                 
+                                 dt=parser.parse(time_date)
+                                 fields['start_date'] = str(dt.strftime('%d-%m-%y')).split()[0]
+                                 last_event_row=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+')')
+                                 time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+') > td:nth-child(3)').text
+                                 time_date=time_info.split(',')[1]
+                                 dt=parser.parse(time_date)
+                                 fields['end_date']= str(dt.strftime('%d-%m-%y')).split()[0]
+                                 #fields['end_time']=fields['start_time']
+                                 fields['end_time']=''
+                                 #event_name
+                                 #fields['event_name']=driver.find_element_by_css_selector('td:nth-child(4)').text
+                                 #location_name
+                                 location_name=event_row.find_element_by_css_selector('td:nth-child(5)').text
+                                 fields['location_name']=location_name.strip()
+                                 print("Location name"+location_name)
+                           
+                                
+                    elif(len(event_rows)==2):
+                         print("single event: ")
+                         start_time=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(2)').text
+                         fields['start_time'] = start_time
+                         time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(3)').text
+                         time_date=time_info.split(',')[1]
+                         dt=parser.parse(time_date)
+                         fields['start_date'] = str(dt.strftime('%d-%m-%y')).split()[0]
+                         last_event_row=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+')')
+                         time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+') > td:nth-child(3)').text
+                         time_date=time_info.split(',')[1]
+                         dt=parser.parse(time_date)
+                         fields['end_date']= str(dt.strftime('%d-%m-%y')).split()[0]
+                         #fields['end_time']=fields['start_time']
+                         fields['end_time']=''
+                         #event_name
+                         #fields['event_name']=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(5)').text
+                         #location_name
+                         location_name=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(5)').text
+                         fields['location_name']=location_name.strip()
+                         #print("Location name"+location_name)
+                    else:
+                        print("Date Error")
+                         
+                except:
+                    print("End Date Error")
+                    print(traceback.format_exc())
+                
+                #get latitute longitute and location
+                #lat_lng
+                try:
+                    if(fields['location_name'] not in map_lat or fields['location_name'] not in map_lng ):
+                        print("Lat lng not saved in my map")
+                        driver.get('https://www.latlong.net/')
+                        inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
+                        inputEle.send_keys(fields['location_name']+", Norway")
+                        driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
+                        #latitude
+                        lat=''
+                        
+                        #longitude
+                        lng=''
+                        
+                        try:
+                            WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                           'Timed out waiting for PA creation ' +
+                                                           'confirmation popup to appear.')
+                            alert = driver.switch_to.alert
+                            alert.accept()
+                            print("alert accepted")
+                        except TimeoutException:
+                            print("no alert")
+                            lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
+                            lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
+                            fields['lat'] = str(lat)
+                            fields['lng'] = str(lng)
+                            #print(fields['lat'])
+                            #print(fields['lng'])
+                            map_lat[fields['location_name']]=lat
+                            map_lng[fields['location_name']]=lng
+                            print("Pass 1")
+                            pass
+                    else:
+                        fields['lat'] = map_lat[fields['location_name']]
+                        fields['lng'] = map_lng[fields['location_name']]
+                            
+                except:
+                    print("error in  latlong.net")
+                    print(traceback.format_exc())
+                #get address from lat long
+                if(len(str(fields['lng']).strip())>0 and len(str(fields['lat']).strip())>0 ):
+                    print("lat and lng exist"+str(fields['lat'])+" : "+str(fields['lng']))
+                    try:
+                        if(fields['location_name'] not in map_addr):
+                            print("location not  exists:")
+                            driver.get('https://www.latlong.net/Show-Latitude-Longitude.html')
+                            lat_input=driver.find_element_by_xpath("//input[@placeholder='lat']")
+                            lat_input.send_keys(fields['lat'])
+                            lng_input=driver.find_element_by_xpath("//input[@placeholder='long']")
+                            lng_input.send_keys(fields['lng'])
+                            #click get
+                            driver.find_element_by_css_selector('body > main > div.row > div.col-7.graybox > form > div.row > div:nth-child(3) > button').click()
+                            sleep(1)
+                            try:
+                                WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                               'Timed out waiting for PA creation ' +
+                                                               'confirmation popup to appear.')
+                                alert = driver.switch_to.alert
+                                alert.accept()
+                                print("alert accepted")
+                            except TimeoutException:
+                                #sleep(5)
+                                textarea=driver.find_element_by_css_selector('#address')
+                                location_address=textarea.get_attribute('value')
+                                #print("location Address:"+location_address)
+                                fields['location_address']=location_address.strip()
+                                if(len(location_address.strip())>0):
+                                    map_addr[fields['location_name']]=location_address.strip()
+                                print("Pass 2")
+                                pass
+                        else:
+                            print("else location address exist:"+map_addr[fields['location_name']])
+                            fields['location_address']=map_addr[fields['location_name']]
+                    except:
+                        print("error in latlong address")
+                        print(traceback.format_exc())
+                        break;
             except:
                 print("Ticket link invalid")
-            
-            
-            #find last date
-            try:
-                event_rows=driver.find_elements_by_css_selector('#Billett > table > tbody > tr')
-                if(len(event_rows)>2):
-                    for i in range(1,len(event_rows)):
-                        event_row=event_rows[i]
-                        arr_id=event_row.find_element_by_css_selector('td:nth-child(1) > input[type="radio"]').get_attribute('value')
-                        if(arrangement_id==arr_id):
-                             start_time=driver.find_element_by_css_selector('td:nth-child(2)').text
-                             fields['start_time'] = start_time
-                             time_info=driver.find_element_by_css_selector('td:nth-child(3)').text
-                             print("Time Split:"+time_info.split(','))
-                             time_date=time_info.split(',')[1]
-                             
-                             dt=parser.parse(time_date)
-                             fields['start_date'] = dt.split()[0]
-                             last_event_row=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+')')
-                             end_date=time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+') > td:nth-child(3)').text
-                             time_date=time_info.split(',')[1]
-                             dt=parser.parse(time_date)
-                             fields['end_date']=dt.split()[0]
-                             #fields['end_time']=fields['start_time']
-                             fields['end_time']='23:30'
-                             #event_name
-                             #fields['event_name']=driver.find_element_by_css_selector('td:nth-child(4)').text
-                             #location_name
-                             location_name=driver.find_element_by_css_selector('td:nth-child(5)').text
-                             fields['location_name']=location_name
-                             print("Location name"+location_name)
-                elif(len(event_rows)==2):
-                     print("single event: ")
-                     start_time=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(2)').text
-                     fields['start_time'] = start_time
-                     time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(3)').text
-                     time_date=time_info.split(',')[1]
-                     dt=parser.parse(time_date)
-                     fields['start_date'] = str(dt).split()[0]
-                     last_event_row=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+')')
-                     end_date=time_info=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child('+str(len(event_rows))+') > td:nth-child(3)').text
-                     time_date=time_info.split(',')[1]
-                     dt=parser.parse(time_date)
-                     fields['end_date']=time_date
-                     #fields['end_time']=fields['start_time']
-                     fields['end_time']='23:30'
-                     #event_name
-                     #fields['event_name']=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(5)').text
-                     #location_name
-                     location_name=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(5)').text
-                     fields['location_name']=location_name
-                     print("Location name"+location_name)
-                else:
-                    print("Date Error")
-                    fields['start_time']=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(2)').text
-                    fields['start_date']=driver.find_element_by_css_selector('#Billett > table > tbody > tr:nth-child(2) > td:nth-child(3)').text.split(',')[1]
-                    fields['end_date']=fields['start_date']
-                    fields['end_time']='23:30'        
-            except:
-                print("End Date Error")
-                print(traceback.format_exc())
-            
-            #get latitute longitute and location
-            #lat_lng
-            try:
-                if(fields['host_name'] not in map_lat or fields['host_name'] not in map_lng ):
-                    driver.get('https://www.latlong.net/')
-                    inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
-                    inputEle.send_keys(fields['location_name']+', Norway')
-                    driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
-                    #latitude
-                    lat=''
-                    
-                    #longitude
-                    lng=''
-                    
-                    try:
-                        WebDriverWait(driver, 3).until(EC.alert_is_present(),
-                                                       'Timed out waiting for PA creation ' +
-                                                       'confirmation popup to appear.')
-                        alert = driver.switch_to.alert
-                        alert.accept()
-                        print("alert accepted")
-                    except TimeoutException:
-                        print("no alert")
-                        lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
-                        lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
-                        fields['lat'] = str(lat)
-                        fields['lng'] = str(lng)
-                        print(fields['lat'])
-                        print(fields['lng'])
-                        map_lat[fields['host_name']]=lat
-                        map_lng[fields['host_name']]=lng
-                        pass
-            except:
-                print("error in  latlong.net")
-                print(traceback.format_exc())
-            #get address from lat long
-            
-            try:
-                if(fields['location_name']+', Norway' not in map_addr):
-                    driver.get('https://www.latlong.net/Show-Latitude-Longitude.html')
-                    lat_input=driver.find_element_by_xpath("//input[@placeholder='lat']")
-                    lat_input.send_keys(fields['lat'])
-                    lng_input=driver.find_element_by_xpath("//input[@placeholder='long']")
-                    lng_input.send_keys(fields['lng'])
-                    #click get
-                    driver.find_element_by_css_selector('body > main > div.row > div.col-7.graybox > form > div.row > div:nth-child(3) > button').click()
+                driver.close()
+                driver.switch_to_window(main_window)
+                
+                #driver.get(event_link)                
+                #need to get all details from list page
+                #need to do
+                #get to event_link website
+                try:
+                    url=tr.find_element_by_css_selector('td:nth-child(2) > a:nth-child(1)')
+                    url.send_keys(Keys.CONTROL+Keys.RETURN)
+                    driver.switch_to_window(driver.window_handles[1])
                     sleep(1)
+                except:
+                    print("Event Link not Present")
+                    print(traceback.format_exc())
+                try:                
+                    image_link=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > span:nth-child(1) > img').get_attribute('src')
+                except:
+                    print("No Image link")
+                #download image
+                try:
+                    print("Image link:"+image_link)
+                    img_src=''
+                    if(str.find(image_link,"http")>=0 or str.find(image_link,"www")>=0):
+                        img_src=image_link
+                    else:
+                        if(len(image_link)>0):
+                            img_src = 'http://www.ringbillett.no/'+image_link
+                    
+                    #print("image src:"+img_src)
+                    x = img_src.split('/')[-1]
+                    #print("Image Name:"+x);
+                    fields['image_name']=x
+                    save_path = folder+"/"+x
+                    #print("Save_path:"+save_path)
+                    if(len(img_src)>0):
+                        urllib.request.urlretrieve(img_src, save_path)
+                except Exception:
+                    print('no image')
+                    print(traceback.format_exc())
+                
+                try:
+                    event_name=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > span.infotabell-info1 > h1').text
+                    print("Event NAme:"+event_name)
+                    fields['event_name']=event_name
+                except:
+                    print("Event Name not found")
+                
+                try:
+                    host_name=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > a').text
+                    fields['host_name']=host_name
+                    print("Host name:"+host_name)
+                except:
+                    print("Host not found")
+                try:
+                    event_desc=driver.find_element_by_css_selector('#ctl00_ContentPlaceHolder1_ctlArrangementInfo > p').text
+                    fields['event_desc']=event_desc
+                    print("Event Desc:"+event_desc)
+                except:
+                    print("Event Desc not found")
+                
+                
+                
+                location_name=tr.find_element_by_css_selector('td:nth-child(2) > a:nth-child(3)').text
+                fields['location_name']=location_name
+                #get latitute longitute and location
+                #lat_lng
+                try:
+                    if(fields['location_name'] not in map_lat or fields['location_name'] not in map_lng ):
+                        driver.get('https://www.latlong.net/')
+                        inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
+                        inputEle.send_keys(fields['location_name']+', Norway')
+                        driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
+                        #latitude
+                        lat=''
+                        
+                        #longitude
+                        lng=''
+                        
+                        try:
+                            WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                           'Timed out waiting for PA creation ' +
+                                                           'confirmation popup to appear.')
+                            alert = driver.switch_to.alert
+                            alert.accept()
+                            print("alert accepted")
+                        except TimeoutException:
+                            print("no alert")
+                            lat=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div > input').get_attribute('value')
+                            lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
+                            fields['lat'] = str(lat)
+                            fields['lng'] = str(lng)
+                            #print(fields['lat'])
+                            #print(fields['lng'])
+                            map_lat[fields['location_name']]=lat
+                            map_lng[fields['location_name']]=lng
+                            print("Pass 3")
+                            pass
+                except:
+                    print("error in  latlong.net")
+                    print(traceback.format_exc())
+                #get address from lat long
+                if(len(str(fields['lng']).strip())>0 and len(str(fields['lat']).strip())>0 ):
                     try:
-                        WebDriverWait(driver, 3).until(EC.alert_is_present(),
-                                                       'Timed out waiting for PA creation ' +
-                                                       'confirmation popup to appear.')
-                        alert = driver.switch_to.alert
-                        alert.accept()
-                        print("alert accepted")
-                    except TimeoutException:
-                        sleep(5)
-                        print("no alert")
-                        location_address=driver.find_element_by_css_selector('#address').get_attribute("innerText")
-                        print("location Address:"+location_address)
-                        location_address=driver.find_element_by_css_selector('#address').text
-                        print("location Address:"+location_address)
-                        textarea=driver.find_element_by_css_selector('#address')
-                        print(textarea.get_attribute('value'))
-                        location_address=textarea.get_attribute('value')
-                        fields['location_address']=location_address
-                        if(len(location_address)>0):
-                            map_addr[fields['location_name']+', Norway']=location_address
-                            location_address=driver.find_element_by_css_selector('#address').text
-                        pass
-                else:
-                    print("else location address:"+map_addr[fields['location_name']+', Norway'])
-                    fields['location_address']=map_addr[fields['location_name']+', Norway']
-            except:
-                print("error in latlong address")
-                print(traceback.format_exc())
-                break;
-            
+                        if(fields['location_name'] not in map_addr):
+                            driver.get('https://www.latlong.net/Show-Latitude-Longitude.html')
+                            lat_input=driver.find_element_by_xpath("//input[@placeholder='lat']")
+                            lat_input.send_keys(fields['lat'])
+                            lng_input=driver.find_element_by_xpath("//input[@placeholder='long']")
+                            lng_input.send_keys(fields['lng'])
+                            #click get
+                            driver.find_element_by_css_selector('body > main > div.row > div.col-7.graybox > form > div.row > div:nth-child(3) > button').click()
+                            sleep(1)
+                            try:
+                                WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                                               'Timed out waiting for PA creation ' +
+                                                               'confirmation popup to appear.')
+                                alert = driver.switch_to.alert
+                                alert.accept()
+                                print("alert accepted")
+                            except TimeoutException:
+                                #sleep(5)
+                                textarea=driver.find_element_by_css_selector('#address')
+                                location_address=textarea.get_attribute('value')
+                                #print("location Address:"+location_address)
+                                fields['location_address']=location_address.strip()
+                                if(len(location_address)>0):
+                                    map_addr[fields['location_name']]=location_address.strip()
+                                print("Pass 4")
+                                pass
+                        else:
+                            print("else location address exist:"+map_addr[fields['location_name']])
+                            fields['location_address']=map_addr[fields['location_name']]
+                    except:
+                        print("error in latlong address")
+                        print(traceback.format_exc())
+                        break;
+                                
+                
+                
+             
             
             
             #fill details
+            print("-----------------------------------")
             with open(csvfile, "a", encoding='utf-8') as output:
                 writer = csv.writer(output, lineterminator='\n')
                 writer.writerow(list(fields.values()))
+                print("Count:"+str(event_count)+" Image:"+fields['image_name'])
+                print("Event:"+fields['event_name'])
+                print("Image:"+fields['image_name'])
+                print("location Name:"+fields['location_name'])
+                print("Location Address:"+fields['location_address'])
+                print("Ticket Link:"+fields['ticket_link'])
+                print("site_scraped:"+fields['site_scraped'])
+                print("Host NAme:"+fields['host_name'])
+                print("Lat :"+fields['lat'])
+                print("Lng:"+fields['lng'])
+                
+                
+                event_count+=1
+                #print(list(fields.values()))
+                #print(fields)
                 fields = fields.fromkeys(fields, '')
                 sleep(1)
                 driver.close()
                 driver.switch_to_window(main_window)
+                #sleep(5)
+                
+                print("-----------------------------------")
                 
         else:
             print("Table header ")
+            print("Pass 5")
+            print("=======================")
             pass;
