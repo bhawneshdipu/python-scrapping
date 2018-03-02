@@ -323,11 +323,12 @@ for pageno in range(1,maxpage+1):
                 fields['lat']=lat
                 fields['lng']=lng
                 pass    
+            driver.close()
         except Exception:
             print(traceback.format_exc())
             print ('--no location_address')
         
-        driver.close()
+        
         driver.switch_to_window(main_window)
         driver.switch_to_window(driver.window_handles[0])
             
