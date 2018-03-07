@@ -370,7 +370,8 @@ for page in range(1,6,1):
             calendar=''
             twitter_id=''
             end_time=''
-            if(ticket_link.find("https://www.ticketmaster.no/")>=0):    
+            if(ticket_link.find("ticketmaster.no")>=0):
+                print("Ticket Master");
                 start_time=driver.find_element_by_css_selector('#eventinfo > header > div.eventinfo__main__info > div > div.eventcard__body > div.eventcard__body__when').text
                 start_time=str(start_time).split(",")[1]
                 event_details=driver.find_element_by_css_selector("#main > script:nth-child(3)").text
@@ -379,6 +380,7 @@ for page in range(1,6,1):
                 print("Start Time from ticket link:"+start_time)
                 
             elif(ticket_link.find("ticketco")>=0):
+                print("Ticket CO");
                 start_time=driver.find_element_by_css_selector('#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(1) > span:nth-child(4) > font > font').text
                 start_time=str(start_time).split()[0]
                 
@@ -388,6 +390,7 @@ for page in range(1,6,1):
                 google_id=driver.find_element_by_css_selector("#root > table > tbody > tr > td > a").get_attribute("href") 
                 twitter_id=driver.find_element_by_css_selector("#b").get_attribute("href")
             elif(ticket_link.find("stavanger-konserthus.no")>0):
+                print("stavanger-konserthus");
                 start_time=driver.find_element_by_css_selector('#shows > tbody > tr > td:nth-child(3)').text
                 start_time=str(start_time)
                 
@@ -395,6 +398,7 @@ for page in range(1,6,1):
                 calendar=driver.find_element_by_css_selector("#addeventatc1").get_attribute("href")
                 twitter_id=driver.find_element_by_css_selector("#b").get_attribute("href")
             elif(ticket_link.find("folketeateret")>=0):
+                print("folketeateret")
                 start_time=driver.find_element_by_css_selector('#site-wrapper > div > div > div.small-6.medium-8.large-3.xlarge-2.columns.calendar-event__column.time > h5 > font > font').text
                 start_time=str(start_time).split()[0]
                 
@@ -418,6 +422,7 @@ for page in range(1,6,1):
             print("===================================================");
             
             print("Count:"+str(event_count)+" Image:"+fields['image_name'])
+            print("Start Time:"+start_time)
             print("Event:"+fields['event_name'])
             print("Image:"+fields['image_name'])
             print("location Name:"+fields['location_name'])
