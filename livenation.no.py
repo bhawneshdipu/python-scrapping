@@ -107,7 +107,7 @@ print(dir_path)
 prefs = {"profile.managed_default_content_settings.images":2}
 chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--ignore-certificate-errors')
-chromeOptions.add_argument('--headless')
+#chromeOptions.add_argument('--headless')
 
 chromeOptions.add_experimental_option("prefs",prefs)
 driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
@@ -132,7 +132,7 @@ with open(csvfile, "w", encoding='utf-8') as output:
     writer = csv.writer(output, lineterminator='\n')
     if(page==0):
         writer.writerow(header)
-    
+count=0
 for page in range(1,6,1):
     
     img_folder = folder + '/images'
@@ -155,7 +155,9 @@ for page in range(1,6,1):
     event_count=1
     count=0
     for row in rows:
-        sleep(3)     
+        count+=1;
+        if(count<5):
+            continue;
         print("Count:"+str(count))
         count+=1
         event_link=row.find_element_by_css_selector('a').get_attribute('href')
@@ -347,11 +349,12 @@ for page in range(1,6,1):
                         lng=driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > div > div:nth-child(2) > input').get_attribute('value')
                         fields['lat'] = str(lat)
                         fields['lng'] = str(lng)
-                        #print(fields['lat'])
-                        #print(fields['lng'])
+                        print(fields['lat'])
+                        print(fields['lng'])
                         map_lat[fields['location_name']]=lat
                         map_lng[fields['location_name']]=lng
                         print("Pass 3")
+                        sleep(5)
                         pass
                 else:
                       fields['lat'] = map_lat[fields['location_name']]
@@ -387,10 +390,10 @@ for page in range(1,6,1):
                 
             elif(ticket_link.find("ticketco")>=0):
                 print("Ticket CO");
-                start_time=driver.find_element_by_css_selector('#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(1) > span:nth-child(4) > font > font').text
+                start_time=driver.find_element_by_css_selector('#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(1) > span:nth-child(4)').text
                 start_time=str(start_time).split()[0]
                 
-                end_time=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(2) > font:nth-child(3) > font").text
+                end_time=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(2)").text.split()[-1]
                 calendar=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.text-center > a").get_attribute("href")
                 calendar=driver.current_url+calendar
                 google_id=driver.find_element_by_css_selector("#root > table > tbody > tr > td > a").get_attribute("href") 
@@ -400,12 +403,12 @@ for page in range(1,6,1):
                 start_time=driver.find_element_by_css_selector('#shows > tbody > tr > td:nth-child(3)').text
                 start_time=str(start_time)
                 
-                end_time=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(2) > font:nth-child(3) > font").text
+                end_time=driver.find_element_by_css_selector("#shows > tbody > tr > td:nth-child(3)").text
                 calendar=driver.find_element_by_css_selector("#addeventatc1").get_attribute("href")
                 twitter_id=driver.find_element_by_css_selector("#b").get_attribute("href")
             elif(ticket_link.find("folketeateret")>=0):
                 print("folketeateret")
-                start_time=driver.find_element_by_css_selector('#site-wrapper > div > div > div.small-6.medium-8.large-3.xlarge-2.columns.calendar-event__column.time > h5 > font > font').text
+                start_time=driver.find_element_by_css_selector('#site-wrapper > div > div > div.small-6.medium-8.large-3.xlarge-2.columns.calendar-event__column.time > h5').text
                 start_time=str(start_time).split()[0]
                 
             print("Start Time:"+start_time)
