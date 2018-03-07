@@ -166,11 +166,11 @@ for page in range(1,6,1):
         #get date
         try:
             try:
-                day=driver.find_element_by_css_selector('a > div.artistticket__date > span.date__day').text
+                day=row.find_element_by_css_selector('a > div.artistticket__date > span.date__day').text
             except:
                 print("day not found")
             try:
-                month,year=driver.find_element_by_css_selector('a > div.artistticket__date > span.date__month').text.split()
+                month,year=row.find_element_by_css_selector('a > div.artistticket__date > span.date__month').text.split()
             except:
                 print("month year  not found")
             
@@ -274,6 +274,7 @@ for page in range(1,6,1):
         #get location name
         try:
             location_name=driver.find_element_by_css_selector('#top > main > div > div.layout__container > div.eventblurb > div > div.eventblurb__detailscontainer > h2').text
+            location_name=location_name.replace("Detaljer","")
             print("Location Name:"+location_name)
             fields['location_name']=location_name
         except:
@@ -303,6 +304,7 @@ for page in range(1,6,1):
             #location address
             try:
                 location_address=driver.find_element_by_css_selector('#top > main > div > div.layout__container > div.accordion__accordion > div > div > h3').text
+                location_address=location_name+","+location_address
                 fields['location_address']=location_address
             except:                
                 print("Location Detail not found")
@@ -367,12 +369,15 @@ for page in range(1,6,1):
             google_id=''
             calendar=''
             twitter_id=''
+            end_time=''
             if(ticket_link.find("https://www.ticketmaster.no/")>=0):    
                 start_time=driver.find_element_by_css_selector('#eventinfo > header > div.eventinfo__main__info > div > div.eventcard__body > div.eventcard__body__when').text
                 start_time=str(start_time).split(",")[1]
                 event_details=driver.find_element_by_css_selector("#main > script:nth-child(3)").text
                 print("*********************************************")
                 print("Event Details"+event_details)
+                print("Start Time from ticket link:"+start_time)
+                
             elif(ticket_link.find("ticketco")>=0):
                 start_time=driver.find_element_by_css_selector('#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(1) > span:nth-child(4) > font > font').text
                 start_time=str(start_time).split()[0]
