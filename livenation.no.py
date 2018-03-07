@@ -226,11 +226,11 @@ for page in range(1,5,1):
             fields['event_desc']=event_detail
             
             #get start time from desc
-            pattern="(?i)(Door)(\w+)(\W+)([0-9]{0,2}:[0-9]{0,2})"
+            pattern="(?i)(Dører)(\w+)(\W+)([0-9]{0,2}:[0-9]{0,2})"
             match=re.search(pattern,event_detail)
             match_start=''
             if(len(match)>0):
-                match_start=match[0]
+                match_start=match[0].split(":")[1]
                 print("Start Time from : desc: "+match[0])
         except:
             print(traceback.format_exc())
