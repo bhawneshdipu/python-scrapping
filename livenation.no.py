@@ -222,16 +222,19 @@ for page in range(1,5,1):
         
         #get event details
         try:
-            event_detail=driver.find_element_by_css_selector('#top > main > div > div.layout__container > div.accordion__accordion > div').text
-            fields['event_desc']=event_detail
+            event_desc=driver.find_element_by_css_selector('#top > main > div > div.layout__container > div.accordion__accordion > div').text
+            print("Event Detail:"+event_desc)
+            fields['event_desc']=event_desc
             
             #get start time from desc
-            pattern="(?i)(Dører)(\w+)(\W+)([0-9]{0,2}:[0-9]{0,2})"
-            match=re.search(pattern,event_detail)
+            pattern="(?i)(Dører)(\W+)(\W+)([0-9]{0,2}:[0-9]{0,2})"
+            match=re.search(pattern,event_desc)
+            print("match result:")
+            print(match)
             match_start=''
-            if(match!=None and len(match)>0):
-                match_start=match[0].split(":")[1]
-                print("Start Time from : desc: "+match[0])
+            if(match!=None):
+                match_start=match[0].split()[1]
+                print("Start Time from Event---->: desc: "+match[0])
         except:
             print(traceback.format_exc())
             print("event_desc  not found")
