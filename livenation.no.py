@@ -107,7 +107,7 @@ print(dir_path)
 prefs = {"profile.managed_default_content_settings.images":2}
 chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--ignore-certificate-errors')
-#chromeOptions.add_argument('--headless')
+chromeOptions.add_argument('--headless')
 
 chromeOptions.add_experimental_option("prefs",prefs)
 driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
@@ -304,7 +304,8 @@ for page in range(1,6,1):
             #location address
             try:
                 location_address=driver.find_element_by_css_selector('#top > main > div > div.layout__container > div.accordion__accordion > div > div > h3').text
-                location_address=location_name+","+location_address
+                location_address=location_name.split(",")[0]+","+location_address
+                print("Location address:"+location_address)
                 fields['location_address']=location_address
             except:                
                 print("Location Detail not found")
@@ -325,7 +326,7 @@ for page in range(1,6,1):
                 if(fields['location_name'] not in map_lat or fields['location_name'] not in map_lng ):
                     driver.get('https://www.latlong.net/')
                     inputEle = driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > input')
-                    inputEle.send_keys(fields['location_name']+', Norway')
+                    inputEle.send_keys(fields['location_address']+", Norway")
                     driver.find_element_by_css_selector('body > main > div:nth-child(3) > div.col-7.graybox > form > button').click()
                     #latitude
                     lat=''
@@ -352,6 +353,11 @@ for page in range(1,6,1):
                         map_lng[fields['location_name']]=lng
                         print("Pass 3")
                         pass
+                else:
+                      fields['lat'] = map_lat[fields['location_name']]
+                      fields['lng'] = map_lng[fields['location_name']]
+                      
+                
             except:
                 print("error in  latlong.net")
                 print(traceback.format_exc())
@@ -448,7 +454,7 @@ for page in range(1,6,1):
                 driver.close()
             driver.switch_to_window(driver.window_handles[0])
             
-            driver.switch_to_window(main_window)
+            #driver.switch_to_window(main_window)
             #sleep(5)
             
             print("----------------End-------------------")
