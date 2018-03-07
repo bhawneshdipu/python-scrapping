@@ -133,7 +133,7 @@ with open(csvfile, "w", encoding='utf-8') as output:
     if(page==0):
         writer.writerow(header)
     
-for page in range(1,5,1):
+for page in range(1,6,1):
     
     img_folder = folder + '/images'
     
@@ -287,6 +287,7 @@ for page in range(1,5,1):
             print("Ticket link:"+ticket_link)
             fields['ticket_link']=ticket_link
         except:
+            print(traceback.format_exc())
             print("ticket link not found")
         
         
@@ -361,12 +362,43 @@ for page in range(1,5,1):
         
         #get start time with ticket link
         try:
-            print("GEt ticket Link:"+ticket_link)
+            print("GEt ticket Link page:"+ticket_link)
             driver.get(ticket_link)
-            start_time=driver.find_element_by_css_selector('#eventinfo > header > div.eventinfo__main__info > div > div.eventcard__body > div.eventcard__body__when').text
-            start_time=str(start_time).split(",")[1]
+            google_id=''
+            calendar=''
+            twitter_id=''
+            if(ticket_link.find("https://www.ticketmaster.no/")>=0):    
+                start_time=driver.find_element_by_css_selector('#eventinfo > header > div.eventinfo__main__info > div > div.eventcard__body > div.eventcard__body__when').text
+                start_time=str(start_time).split(",")[1]
+                event_details=driver.find_element_by_css_selector("#main > script:nth-child(3)").text
+                print("*********************************************")
+                print("Event Details"+event_details)
+            elif(ticket_link.find("ticketco")>=0):
+                start_time=driver.find_element_by_css_selector('#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(1) > span:nth-child(4) > font > font').text
+                start_time=str(start_time).split()[0]
+                
+                end_time=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(2) > font:nth-child(3) > font").text
+                calendar=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.text-center > a").get_attribute("href")
+                calendar=driver.current_url+calendar
+                google_id=driver.find_element_by_css_selector("#root > table > tbody > tr > td > a").get_attribute("href") 
+                twitter_id=driver.find_element_by_css_selector("#b").get_attribute("href")
+            elif(ticket_link.find("stavanger-konserthus.no")>0):
+                start_time=driver.find_element_by_css_selector('#shows > tbody > tr > td:nth-child(3)').text
+                start_time=str(start_time)
+                
+                end_time=driver.find_element_by_css_selector("#entity_44014 > div > aside > div:nth-child(2) > div.t-form-row > div:nth-child(2) > font:nth-child(3) > font").text
+                calendar=driver.find_element_by_css_selector("#addeventatc1").get_attribute("href")
+                twitter_id=driver.find_element_by_css_selector("#b").get_attribute("href")
+            elif(ticket_link.find("folketeateret")>=0):
+                start_time=driver.find_element_by_css_selector('#site-wrapper > div > div > div.small-6.medium-8.large-3.xlarge-2.columns.calendar-event__column.time > h5 > font > font').text
+                start_time=str(start_time).split()[0]
+                
             print("Start Time:"+start_time)
             fields['start_time']=start_time
+            fields['google_id']=google_id
+            fields['twitter_id']=twitter_id
+            fields['end_time']=end_time
+        
         except:
             print(traceback.format_exc())
             print("start time not found")
