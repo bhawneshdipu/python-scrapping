@@ -163,7 +163,7 @@ web_list=[
         'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=outdoors&is_v=1',
         'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=conferences&is_v=1']
 
-web_list=['https://billetto.no/newfrontpage?text=&page=0&is_v=1']
+#web_list=['https://billetto.no/newfrontpage?text=&page=0&is_v=1']
 
 click_once="$('#js-content > div.chamber-half--top > div > div > div:nth-child(3) > div > p').click();"
 click_all="$('#js-content > div.chamber-half--top > div > div > div:nth-child(3) > div > div > div > div > div > div > div:nth-child(1) > div > label > span').click()";
@@ -173,9 +173,9 @@ for page in web_list:
     #https://billetto.no/newfrontpage?text=&page=0&is_v=1
     next_page=page
     driver.get(next_page)
-    driver.execute_script(click_once)
-    driver.execute_script(click_all)    
-    driver.execute_script(click_all)    
+    #driver.execute_script(click_once)
+    #driver.execute_script(click_all)    
+    #driver.execute_script(click_all)    
     
     
     
@@ -365,9 +365,7 @@ for page in web_list:
                 match=re.search(fbpattern,event_desc)
                 print("match result:")
                 print(match)
-                match_start=''
                 if(match!=None):
-                    match_start=match[0].split()[1]
                     print("facebook id"+match[0])
                     fields['facebook_id']=match[0]
                 
@@ -375,9 +373,7 @@ for page in web_list:
                 match=re.search(instapattern,event_desc)
                 print("match result:")
                 print(match)
-                match_start=''
                 if(match!=None):
-                    match_start=match[0].split()[1]
                     print("instagram id"+match[0])
                     fields['instagram_id']=match[0]
                 
@@ -385,9 +381,7 @@ for page in web_list:
                 match=re.search(twitterpattern,event_desc)
                 print("match result:")
                 print(match)
-                match_start=''
                 if(match!=None):
-                    match_start=match[0].split()[1]
                     print("twitter id"+match[0])
                     fields['twitter_id']=match[0]
                 
@@ -395,9 +389,7 @@ for page in web_list:
                 match=re.search(youtubepattern,event_desc)
                 print("match result:")
                 print(match)
-                match_start=''
                 if(match!=None):
-                    match_start=match[0].split()[1]
                     print("youtube id"+match[0])
                     fields['youtube_id']=match[0]
                 
