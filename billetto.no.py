@@ -111,7 +111,7 @@ print(dir_path)
 prefs = {"profile.managed_default_content_settings.images":2}
 chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--ignore-certificate-errors')
-#chromeOptions.add_argument('--headless')
+chromeOptions.add_argument('--headless')
 
 chromeOptions.add_experimental_option("prefs",prefs)
 driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
@@ -361,7 +361,7 @@ for page in web_list:
                 print("Event Detail:"+event_desc)
                 fields['event_desc']=event_desc
                 #get start time from desc
-                fbpattern="(?i)(facebook.com){1,}"
+                fbpattern="(:?)(facebook.com/)(\w+)(/)(\w+|)(/|)"
                 match=re.search(fbpattern,event_desc)
                 print("match result:")
                 print(match)
@@ -371,7 +371,7 @@ for page in web_list:
                     print("facebook id"+match[0])
                     fields['facebook_id']=str(list(match))
                 
-                instapattern="(?i)(instagram.com){1,}"
+                instapattern="(?i)(instagram.com)(\w+)(/)(\w+|)(/|)"
                 match=re.search(instapattern,event_desc)
                 print("match result:")
                 print(match)
@@ -381,7 +381,7 @@ for page in web_list:
                     print("instagram id"+match[0])
                     fields['instagram_id']=str(list(match))
                 
-                twitterpattern="(?i)(twitter.com){1,}"
+                twitterpattern="(?i)(twitter.com)(\w+)(/)(\w+|)(/|)"
                 match=re.search(twitterpattern,event_desc)
                 print("match result:")
                 print(match)
