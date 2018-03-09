@@ -369,7 +369,7 @@ for page in web_list:
                 if(match!=None):
                     match_start=match[0].split()[1]
                     print("facebook id"+match[0])
-                    fields['facebook_id']=str(list(match))
+                    fields['facebook_id']=match[0]
                 
                 instapattern="(?i)(instagram.com/)(\w+)(/)(\w+|)(/|)"
                 match=re.search(instapattern,event_desc)
@@ -379,7 +379,7 @@ for page in web_list:
                 if(match!=None):
                     match_start=match[0].split()[1]
                     print("instagram id"+match[0])
-                    fields['instagram_id']=str(list(match))
+                    fields['instagram_id']=match[0]
                 
                 twitterpattern="(?i)(twitter.com/)(\w+)(/)(\w+|)(/|)"
                 match=re.search(twitterpattern,event_desc)
@@ -389,7 +389,7 @@ for page in web_list:
                 if(match!=None):
                     match_start=match[0].split()[1]
                     print("twitter id"+match[0])
-                    fields['twitter_id']=str(list(match))
+                    fields['twitter_id']=match[0]
                 
                 youtubepattern="(:?)(youtube.com/)(\w+)(\?)(\w+\W+)([a-zA-Z0-9-_]*)"
                 match=re.search(youtubepattern,event_desc)
@@ -399,7 +399,7 @@ for page in web_list:
                 if(match!=None):
                     match_start=match[0].split()[1]
                     print("youtube id"+match[0])
-                    fields['youtube_id']=str(list(match))
+                    fields['youtube_id']=match[0]
                 
             except:
                 print(traceback.format_exc())
