@@ -17,6 +17,7 @@ import traceback
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.common.by import By
 import csv
 import re
@@ -25,6 +26,7 @@ from collections import OrderedDict
 import urllib.request
 import datetime
 from dateutil import parser
+
 fields = OrderedDict([('ai_id', ''),
 ('category', ''),
 ('event_name', ''),
@@ -115,6 +117,9 @@ chromeOptions.add_experimental_option("prefs",prefs)
 driver = webdriver.Chrome(dir_path+'/chromedriver',chrome_options=chromeOptions)
 #driver = webdriver.Chrome(dir_path+'/chromedriver')
 #driver.implicitly_wait(1)
+#firefox_profile = webdriver.FirefoxProfile()
+#firefox_profile.set_preference('permissions.default.image', 2)
+#driver = webdriver.Firefox(executable_path = dir_path+'/geckodriver',firefox_profile=firefox_profile)
 
 container_path=dir_path+'/containers.csv'
 host_map={}
@@ -145,22 +150,35 @@ with open(csvfile, "w", encoding='utf-8') as output:
         print("Folder Exist")
 count=0
 
-web_list=['https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=music&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=talks&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=entertainment&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=sports&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=other_stuff&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=courses&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=theatre&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=nightlife&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=festival&is_v=1',
-'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=outdoors&is_v=1']
+web_list=[
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=music&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=talks&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=entertainment&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=sports&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=other_stuff&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=courses&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=theatre&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=nightlife&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=festival&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=outdoors&is_v=1',
+        'https://billetto.no/newfrontpage?text=&page=0&filter%5Bcategory%5D%5B0%5D=conferences&is_v=1']
 
+web_list=['https://billetto.no/newfrontpage?text=&page=0&is_v=1']
+
+click_once="$('#js-content > div.chamber-half--top > div > div > div:nth-child(3) > div > p').click();"
+click_all="$('#js-content > div.chamber-half--top > div > div > div:nth-child(3) > div > div > div > div > div > div > div:nth-child(1) > div > label > span').click()";
 done=0
+page_id=0
 for page in web_list:
     #https://billetto.no/newfrontpage?text=&page=0&is_v=1
     next_page=page
     driver.get(next_page)
+    driver.execute_script(click_once)
+    driver.execute_script(click_all)    
+    driver.execute_script(click_all)    
+    
+    
+    
     sleep(5)
     while(True):
         print(next_page)
@@ -172,6 +190,7 @@ for page in web_list:
             rows=driver.find_elements_by_css_selector('#hits_container > div > div')
         except:
             print("No ROW")
+            break
         event_count=0
         if(len(rows)==0):
             break;
@@ -341,6 +360,36 @@ for page in web_list:
                 event_desc=driver.find_element_by_css_selector('#js-content > div.shame-remove-header-margin.single-event > div.grid-container > div > div > div > div.grid__item.five-eighths > div').text
                 print("Event Detail:"+event_desc)
                 fields['event_desc']=event_desc
+                #get start time from desc
+                fbpattern="(?i)(facebook.com){1,}"
+                match=re.search(fbpattern,event_desc)
+                print("match result:")
+                print(match)
+                match_start=''
+                if(match!=None):
+                    match_start=match[0].split()[1]
+                    print("facebook id"+match[0])
+                    fields['facebook_id']=str(list(match))
+                
+                instapattern="(?i)(instagram.com){1,}"
+                match=re.search(instapattern,event_desc)
+                print("match result:")
+                print(match)
+                match_start=''
+                if(match!=None):
+                    match_start=match[0].split()[1]
+                    print("instagram id"+match[0])
+                    fields['instagram_id']=str(list(match))
+                
+                twitterpattern="(?i)(twitter.com){1,}"
+                match=re.search(twitterpattern,event_desc)
+                print("match result:")
+                print(match)
+                match_start=''
+                if(match!=None):
+                    match_start=match[0].split()[1]
+                    print("twitter id"+match[0])
+                    fields['twitter_id']=str(list(match))
                 
             except:
                 print(traceback.format_exc())
@@ -400,7 +449,6 @@ for page in web_list:
             #location address
             try:
                 location_address=driver.find_element_by_css_selector('#js-content > div.shame-remove-header-margin.single-event > div.app-card-light > div > div > div > div > div.grid__item.five-eighths > div > div:nth-child(1) > div > div:nth-child(2) > p').text
-                location_address=location_name.split(",")[0]+","+location_address
                 print("Location address:"+location_address)
                 fields['location_address']=location_address
             except:                
@@ -410,12 +458,11 @@ for page in web_list:
             #get city
             try:
                 #city=driver.find_element_by_css_selector('a > div.artistticket__detailscontainer > section > h5').text
-                lista=location_address.split(",")
+                lista=location_address.replace(","," ").split()
+                lista=map(lambda x:x.title(),lista)
                 city=set(lista) & set(cities)
-                if(len(city)==0):
-                    lista=location_address.split()
-                    city=set(lista) & set(cities)
                 city=list(city)
+                
                 print("City:"+str(city[0]))
                 fields['city']=city[0]
             except:
@@ -513,8 +560,25 @@ for page in web_list:
                 #sleep(5)
                 
                 print("----------------End-------------------")
-        #goto next page        
-        next_page=driver.find_element_by_css_selector("#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a").get_attribute("href")
-        #driver.find_element_by_css_selector("#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a").click()    
-        driver.get(next_page)
-        sleep(5)
+        page_id+=1
+        try:
+            #goto next page
+            print("gooing to next page")
+            
+            next_page=driver.find_element_by_css_selector("#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a").get_attribute("href")
+            #execute script to go to next page
+            #driver.find_element_by_css_selector("#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a").send_keys(Keys.ENTER)
+            #driver.find_element_by_css_selector("#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a").click()    
+            #next_page=re.sub(r"(page=.)","page="+str(page_id),next_page)
+            #driver.get(next_page)
+            
+            driver.execute_script("$('#pagination > ul > li.ais-pagination--item.ais-pagination--item__next > a')[0].click();") 
+            
+            print("NExt Page Click()")
+            sleep(5)
+        except:
+            print("NExt Page Click() ERROR:")
+            print(traceback.format_exc())
+            
+            print("Break the page: no next")
+            break
