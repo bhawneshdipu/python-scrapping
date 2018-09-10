@@ -4,6 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 import base64
 import random
+from time import sleep
+import datetime
+
 
 url = "http://deliveryportal.icicibankltd.com/UI/Login.aspx"
 url = "http://deliveryportal.icicibankltd.com/"
@@ -150,18 +153,27 @@ def login(ban,oPass,soup):
 
 
 if __name__=="__main__":
+    rnd=random.randint(1,28)
+    dt=datetime.datetime.now()
     
-    ban = str(base64.b64decode(b'QkFOMTIyNzQy'),"utf-8")
+    if dt.minute>rnd:
+        rnd=dt.minute+1
     
-    oPass = str(base64.b64decode(b'aGFkb29wXzI='),"utf-8")
-    s = requests.Session()
-
-    r = s.get("http://deliveryportal.icicibankltd.com")
-    
-    soup = BeautifulSoup(r.content, "html.parser")
-    print(r.status_code)
-    
-    s,resp = login(ban,oPass,soup)
+    while True:
+        dt=datetime.datetime.now()
+        print(str(rnd)+"   "+str(dt.minute))
+        if dt.minute==rnd:
+            print("++++++++++++")
+            ban = str(base64.b64decode(b'QkFOMTIyNzQy'),"utf-8")
+            oPass = str(base64.b64decode(b'aGFkb29wXzI='),"utf-8")
+            s = requests.Session()
+            r = s.get("http://deliveryportal.icicibankltd.com")
+            soup = BeautifulSoup(r.content, "html.parser")
+            print(r.status_code)
+            s,resp = login(ban,oPass,soup)
+            break
+        else:
+            sleep(29)
     
     
     
